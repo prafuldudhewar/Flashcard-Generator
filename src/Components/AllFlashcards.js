@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { Link } from 'react-router-dom';
 import { FaTrash } from 'react-icons/fa';
@@ -19,6 +19,31 @@ const AllFlashcards = () => {
   const dispatch = useDispatch();
   const [imageData, setImageData] = useState({});
 
+  const blobToBase64 = (blob) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(blob);
+      reader.onloadend = () => {
+        resolve(reader.result);
+      };
+      reader.onerror = () => {
+        reject(reader.error);
+      };
+    });
+  };
+
+  const fetchImageAsBase64 = useCallback(async (imageUrl) => {
+    try {
+      const response = await fetch(imageUrl);
+      const blob = await response.blob();
+      const base64Image = await blobToBase64(blob);
+      return base64Image;
+    } catch (error) {
+      console.error('Error converting image to base64:', error);
+      return null;
+    }
+  }, []);
+
   useEffect(() => {
     const fetchImages = async () => {
       const updatedImageData = {};
@@ -33,33 +58,9 @@ const AllFlashcards = () => {
       }
       setImageData(updatedImageData);
     };
+
     fetchImages();
-  }, [flashcards]);
-
-  const fetchImageAsBase64 = async (imageUrl) => {
-    try {
-      const response = await fetch(imageUrl);
-      const blob = await response.blob();
-      const base64Image = await blobToBase64(blob);
-      return base64Image;
-    } catch (error) {
-      console.error('Error converting image to base64:', error);
-      return null;
-    }
-  };
-
-  const blobToBase64 = (blob) => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(blob);
-      reader.onloadend = () => {
-        resolve(reader.result);
-      };
-      reader.onerror = () => {
-        reject(reader.error);
-      };
-    });
-  };
+  }, [flashcards, fetchImageAsBase64]); // Added fetchImageAsBase64 to dependencies
 
   const handleDelete = (index) => {
     dispatch(deleteFlashcard(index));

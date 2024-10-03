@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useSelector } from 'react-redux';
 import { useParams, Link } from 'react-router-dom';
 import ShareModal from './ShareModal';
-import { FaShareAlt, FaDownload, FaPrint, FaArrowLeft, FaArrowRight } from 'react-icons/fa';
+import { FaDownload, FaPrint, FaArrowLeft, FaArrowRight } from 'react-icons/fa';
 import { BiShareAlt } from 'react-icons/bi';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
@@ -14,6 +14,32 @@ const ViewCard = () => {
   const [currentTermIndex, setCurrentTermIndex] = useState(0);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [imageData, setImageData] = useState({});
+
+  // Memoize fetchImageAsBase64 function
+  const fetchImageAsBase64 = useCallback(async (imageUrl) => {
+    try {
+      const response = await fetch(imageUrl);
+      const blob = await response.blob();
+      const base64Image = await blobToBase64(blob);
+      return base64Image;
+    } catch (error) {
+      console.error('Error converting image to base64:', error);
+      return null;
+    }
+  }, []);
+
+  const blobToBase64 = (blob) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(blob);
+      reader.onloadend = () => {
+        resolve(reader.result);
+      };
+      reader.onerror = () => {
+        reject(reader.error);
+      };
+    });
+  };
 
   useEffect(() => {
     if (flashcard) {
@@ -31,32 +57,7 @@ const ViewCard = () => {
       };
       fetchImages();
     }
-  }, [flashcard, currentTermIndex]);
-
-  const fetchImageAsBase64 = async (imageUrl) => {
-    try {
-      const response = await fetch(imageUrl);
-      const blob = await response.blob();
-      const base64Image = await blobToBase64(blob);
-      return base64Image;
-    } catch (error) {
-      console.error('Error converting image to base64:', error);
-      return null;
-    }
-  };
-
-  const blobToBase64 = (blob) => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(blob);
-      reader.onloadend = () => {
-        resolve(reader.result);
-      };
-      reader.onerror = () => {
-        reject(reader.error);
-      };
-    });
-  };
+  }, [flashcard, currentTermIndex, fetchImageAsBase64]); // Added fetchImageAsBase64 to dependencies
 
   if (!flashcard) {
     return <div className="container mx-auto p-8">Flashcard not found.</div>;
@@ -115,7 +116,6 @@ const ViewCard = () => {
     return doc;
   };
 
-  
   const handleDownload = () => {
     const doc = generatePDF();
     doc.save('flashcards.pdf');
@@ -166,14 +166,13 @@ const ViewCard = () => {
           {flashcard.terms.length > 0 && (
             <div className="bg-white p-8 shadow-md rounded-lg md:flex">
               {base64Image && (
-               <div className='md:w-1/2 h-60'>
-                 <img
-                  src={base64Image}
-                  alt="Term"
-                  className="mr-4  object-cover"
-                />
-               </div>
-          
+                <div className='md:w-1/2 h-60 flex justify-center items-center'>
+                  <img
+                    src={base64Image}
+                    alt="Term"
+                    className="mr-4 object-cover w-[250px] h-[250px] m-4" // Increased size to 300px by 300px
+                  />
+                </div>
               )}
               <div className="md:w-1/2">
                 <p className="text-gray-700">{flashcard.terms[currentTermIndex].definition}</p>
@@ -200,7 +199,7 @@ const ViewCard = () => {
             </button>
           </div>
         </div>
-        <div className="md:ml-8 flex flex-col items-center md:justify-start  space-y-4 md:h-[150px]">
+        <div className="md:ml-8 flex flex-col items-center md:justify-start space-y-4 md:h-[150px]">
           <button onClick={handleShare} className="flex items-center bg-white text-gray-600 py-2 px-4 rounded-md border border-gray-300 w-[140px]">
             <BiShareAlt className="mr-2" /> {/* Updated Share Icon */}
             Share

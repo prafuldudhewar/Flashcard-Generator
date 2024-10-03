@@ -3,8 +3,8 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { Provider } from 'react-redux';
 import { MemoryRouter, Route } from 'react-router-dom';
 import configureStore from 'redux-mock-store';
-import ViewCard from '../components/ViewCard';
-import ShareModal from '../components/ShareModal';
+import ViewCard from '../Components/ViewCard';
+import ShareModal from '../Components/ShareModal';
 import jsPDF from 'jspdf';
 
 jest.mock('jspdf', () => {
@@ -18,7 +18,7 @@ jest.mock('jspdf', () => {
   }));
 });
 
-jest.mock('../components/ShareModal', () => jest.fn(() => null));
+jest.mock('../Components/ShareModal', () => jest.fn(() => null));
 
 const mockStore = configureStore([]);
 

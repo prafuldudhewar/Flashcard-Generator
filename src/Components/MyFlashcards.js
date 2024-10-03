@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { Link } from 'react-router-dom';
 import { FaTrash } from 'react-icons/fa';
@@ -20,6 +20,30 @@ const MyFlashcards = () => {
   const [imageData, setImageData] = useState({});
   const [showAll, setShowAll] = useState(false);
 
+  const fetchImageAsBase64 = useCallback(async (imageUrl) => {
+    try {
+      const response = await fetch(imageUrl);
+      const blob = await response.blob();
+      const base64Image = await blobToBase64(blob);
+      return base64Image;
+    } catch (error) {
+      console.error('Error converting image to base64:', error);
+      return null;
+    }
+  }, []);
+
+  const blobToBase64 = (blob) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(blob);
+      reader.onloadend = () => {
+        resolve(reader.result);
+      };
+      reader.onerror = () => {
+        reject(reader.error);
+      };
+    });
+  };
 
   useEffect(() => {
     const fetchImages = async () => {
@@ -36,32 +60,7 @@ const MyFlashcards = () => {
       setImageData(updatedImageData);
     };
     fetchImages();
-  }, [flashcards]);
-
-  const fetchImageAsBase64 = async (imageUrl) => {
-    try {
-      const response = await fetch(imageUrl);
-      const blob = await response.blob();
-      const base64Image = await blobToBase64(blob);
-      return base64Image;
-    } catch (error) {
-      console.error('Error converting image to base64:', error);
-      return null;
-    }
-  };
-
-  const blobToBase64 = (blob) => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(blob);
-      reader.onloadend = () => {
-        resolve(reader.result);
-      };
-      reader.onerror = () => {
-        reject(reader.error);
-      };
-    });
-  };
+  }, [flashcards, fetchImageAsBase64]); // Added fetchImageAsBase64 to dependencies
 
   const handleDelete = (index) => {
     dispatch(deleteFlashcard(index));
@@ -78,9 +77,8 @@ const MyFlashcards = () => {
     <div className="container mx-auto p-8">
       <h1 className="text-2xl font-semibold mb-6 text-center">My Flashcards</h1>
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-      {displayedFlashcards.map((flashcard, index) => {
+        {displayedFlashcards.map((flashcard, index) => {
           const base64Image = imageData[index];
-          const truncatedDescription = truncateText(flashcard.description, 100);
           return (
             <div key={index} className="p-4 bg-white shadow-md rounded-lg relative flex flex-col items-center">
               {base64Image && (
@@ -93,7 +91,7 @@ const MyFlashcards = () => {
                 </div>
               )}
               <div className="text-lg font-semibold mb-2 text-center">{flashcard.group}</div>
-              <p className="text-gray-700 mb-4 text-center">{truncatedDescription}</p>
+              <p className="text-gray-700 mb-4 text-center">{truncateText(flashcard.description, 100)}</p>
               <div className="text-sm text-gray-500 mb-2 text-center">{flashcard.terms.length} Cards</div>
               <Link to={`/view-card/${index}`} className="text-red-600 border border-red-600 px-4 py-2 rounded-md mt-auto">
                 View Cards

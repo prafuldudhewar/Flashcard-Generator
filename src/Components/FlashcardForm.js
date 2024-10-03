@@ -12,6 +12,8 @@ const FlashcardForm = () => {
   const [newGroupImage, setNewGroupImage] = useState(null);
   const dispatch = useDispatch();
   const flashcards = useSelector((state) => state.flashcards);
+  const isExistingGroup = flashcards.some(flashcard => flashcard.group === group);
+
 
   const handleTermChange = (index, event) => {
     const newTerms = terms.map((term, termIndex) => {
@@ -105,7 +107,8 @@ const FlashcardForm = () => {
     setNewGroupImage(null);
   };
 
-  // const isExistingGroup = flashcards.some(flashcard => flashcard.group === group);
+  
+  
 
   const triggerFileUpload = (id) => {
     document.getElementById(id).click();
